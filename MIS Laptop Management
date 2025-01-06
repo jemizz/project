@@ -1,0 +1,383 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+const int totalWidth = 160;
+int lapNum[10] = {1,2,3,4,5,6,7,8,9,10};
+int avail[10] = {1,1,1,1,1,1,1,1,1,1};
+
+typedef struct records {
+    char name[100];
+    char date[50];
+    char time[50];
+    char returnTime[50];
+    char mis[100];
+    char returnMis[100];
+    int lapNo;
+    int isReturned;
+    char status[50];
+    char laptopUpdate[50];
+}records;
+void laptopAvail() {
+    FILE *fp = fopen("laptopRecords.txt", "r");
+    if (fp == NULL){
+        printf("Error opening file\n");
+        return;
+    }
+    for (int i=0;i<10;i++){
+        if (fscanf(fp, "%d\n", &avail[i]) != 1){
+            avail[i] = 1;
+        }
+    }
+
+    fclose(fp);
+}
+void saveLaptop() {
+    FILE *fp = fopen("laptopRecords.txt","w");
+    if (fp == NULL) {
+        printf("Error opening file\n");
+        return;
+    }
+    for (int i=0;i<10;i++){
+        fprintf(fp, "%d", avail[i]);
+    }
+    fclose(fp);
+}
+void centerText(char text[], int totalWidth)
+{
+    int textLength = strlen(text);
+    int padding = (totalWidth - textLength) / 2;
+    for (int i = 0; i < padding; i++)
+    {
+        printf(" ");
+    }
+    printf("%s", text);
+}
+void printMenu (){
+    system("cls");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        centerText("=============================================\n", totalWidth);
+        centerText("|          LAPTOP MANAGEMENT MENU           |\n", totalWidth);
+        centerText("=============================================\n", totalWidth);
+        centerText("|1. BORROW A LAPTOP                         |\n", totalWidth);
+        centerText("|2. RETURN A LAPTOP                         |\n", totalWidth);
+        centerText("|3. DISPLAY LAPTOP STATUS                   |\n", totalWidth);
+        centerText("|4. DISPLAY ALL RECORDS                     |\n", totalWidth);
+        centerText("|5. SEARCH RECORD BY NAME OR DATE           |\n", totalWidth);
+        centerText("|6. EXIT                                    |\n", totalWidth);
+        centerText("=============================================\n", totalWidth);
+}
+void borrow() {
+    system("cls");
+    records *r;
+    FILE *fp;
+
+    r = (records*)calloc(1, sizeof(records));
+    fp = fopen("laptopRecords.txt", "a");
+    if (fp==NULL){
+        printf("Failed to open file.\n");
+        free(r);
+        return;
+    }
+    char line2[256];
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    printf("                                                              -------------------ENTER YOUR DETAILS-------------------\n\n");
+
+    snprintf(line2, sizeof(line2), "Enter your name: %-10s", " ");
+    centerText(line2, totalWidth);
+    getchar();
+    scanf("%[^\n]s", r->name);
+
+    snprintf(line2, sizeof(line2), "Enter date(MM-DD-YYYY): %-3s", " ");
+    centerText(line2, totalWidth);
+    getchar();
+    scanf("%[^\n]s", r->date);
+
+
+    snprintf(line2, sizeof(line2), "Enter borrow time(HH:MM): %-1s", " ");
+    centerText(line2, totalWidth);
+    getchar();
+    scanf("%[^\n]s", r->time);
+
+
+    snprintf(line2, sizeof(line2), "Enter MIS Assistant Name: %-1s", " ");
+    centerText(line2, totalWidth);
+    getchar();
+    scanf("%[^\n]s", r->mis);
+
+    while (1){
+        char line[100];
+         centerText("Available Laptop:          ", totalWidth);
+
+        for (int i=0;i<10;i++){
+            if(avail[i]==1){
+                printf("%d ",lapNum[i]);
+            }
+        }
+        snprintf(line, sizeof(line),"   Select a laptop number:    ");
+        centerText(line, totalWidth + 10);
+
+        int result = scanf("%d", &r->lapNo);
+        if (result!=1){
+            printf("                                                              --------------------------------------------------------\n");
+            centerText("     Invalid input. Please try again\n", totalWidth);
+            getchar();
+            continue;
+        }
+        if(r->lapNo < 1 || r->lapNo >10){
+             printf("                                                              --------------------------------------------------------\n");
+            centerText("Invalid Laptop Number\n", totalWidth + 18);
+        } else if (avail[r->lapNo - 1] == 0){
+            snprintf(line, sizeof(line),"Laptop %d is not available. Please choose another one.\n", r->lapNo);
+            centerText(line, totalWidth + 26);
+        } else {
+            // Update availability
+            avail[r->lapNo - 1] = 0;
+            strcpy(r->status, "\t\tBORROWED");
+
+            // Write to file (append the record)
+            fprintf(fp, "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10d\n", r->name, r->date, r->time, r->mis, r->status, r->lapNo);
+
+            printf("Laptop %d has been successfully borrowed.\n", r->lapNo);
+            break;
+        }
+    }
+    free(r);
+    fclose(fp);
+}
+void returnLap() {
+    system("cls");
+    records *r = (records*)calloc(1, sizeof(records));
+    FILE *fp, *tempFp;
+
+
+    fp = fopen("laptopRecords.txt", "r+");
+    if (fp == NULL) {
+        printf("Failed to open file.\n");
+        return;
+    }
+    tempFp = fopen("TemporaryRecords.txt", "w");
+    if (tempFp == NULL) {
+        printf("Failed to open file.\n");
+        fclose(fp);
+        return;
+    }
+
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    printf("                                                              -------------------ENTER DETAILS TO RETURN-------------------\n\n");
+
+    char line2[256];
+    snprintf(line2, sizeof(line2), "Enter return time (HH:MM): %-8s", " ");
+    centerText(line2, totalWidth);
+    getchar();
+    scanf("%[^\n]s", r->returnTime);
+
+    snprintf(line2, sizeof(line2), "Enter return MIS Assistant Name: %-2s", " ");
+    centerText(line2, totalWidth);
+    getchar();
+    scanf("%[^\n]s", r->returnMis);
+
+  int laptopNumber;
+    while (1) {
+        snprintf(line2, sizeof(line2), "Enter the laptop number to return: ");
+        centerText(line2, totalWidth);
+        int result = scanf("%d", &laptopNumber);
+
+        if (result!=1){
+            printf("                                                              --------------------------------------------------------\n");
+            printf("Invalid laptop number.\n");
+            getchar();
+            continue;
+        }
+
+        if (laptopNumber < 1 || laptopNumber > 10) {
+            centerText("Invalid Input. Please try again.\n", totalWidth);
+        } else if (avail[laptopNumber - 1] == 1) {
+            snprintf(line2, sizeof(line2), "Laptop %d is already available, you cannot return it.\n", laptopNumber);
+            centerText(line2, totalWidth);
+        } else {
+            avail[laptopNumber - 1] = 1; // Mark laptop as available
+            break;
+        }
+    }
+
+    // Process records
+    int recordFound = 0;
+    while (fscanf(fp, "%[^\t]\t%[^\t]\t%[^\t]\t%[^\t]\t%[^\t]\t%d\n",
+                  r->name, r->date, r->time, r->mis, r->status, &r->lapNo) != EOF) {
+        if (r->lapNo == laptopNumber && strcmp(r->status, "BORROWED") == 0) {
+            recordFound = 1;
+            strcpy(r->status, "RETURNED");
+
+            fprintf(tempFp, "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10d\t%-10s\t%-10s\n",
+                    r->name, r->date, r->time, r->mis, r->status, r->lapNo, r->returnMis, r->returnTime);
+        } else {
+            fprintf(tempFp, "%-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-10d\n",
+                    r->name, r->date, r->time, r->mis, r->status, r->lapNo);
+        }
+    }
+    fclose(fp);
+    fclose(tempFp);
+
+    if (!recordFound) {
+        printf("\nLaptop %d not found in records or already returned.\n", laptopNumber);
+    } else {
+        remove("laptopRecords.txt");
+        rename("TemporaryRecords.txt", "laptopRecords.txt");
+        printf("\nLaptop %d has been successfully returned.\n", laptopNumber);
+    }
+
+    free(r);
+}
+void lapStat () {
+    system("cls");
+
+    char line[256];
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    centerText("Laptop Status\n", totalWidth);
+    centerText("----------------------------------------------\n", totalWidth);
+    for (int i=0;i<10;i++){
+        if (avail[i]==1) {
+            snprintf(line, sizeof(line), "Laptop %d: Available\n", lapNum[i]);
+            centerText(line, totalWidth);
+        } else {
+            snprintf(line, sizeof(line), "Laptop %d: Borrowed\n", lapNum[i]);
+            centerText(line, totalWidth);
+        }
+    }
+    centerText("===============================================", totalWidth);
+}
+void displayRecord() {
+    system("cls");
+    records r;
+    FILE *fp;
+
+    fp = fopen("laptopRecords.txt", "r");
+    if (fp == NULL) {
+        printf("Failed to open. No records to display\n");
+        return;
+    }
+
+    int recordNo = 1;
+
+    printf("\n--- Laptop Borrow Records ---\n");
+    printf("=================================\n");
+    while (fscanf(fp, "%[^\t]\t%[^\t]\t%[^\t]\t%[^\t]\t%[^\t]\t%d\n",
+                  r.name, r.date, r.time, r.mis, r.status, &r.lapNo) != EOF) {
+        printf("\nRecord %d:\n", recordNo);
+        printf("Name: %s\n", r.name);
+        printf("Date (MM-DD-YYYY): %s\n", r.date);
+        printf("Borrow Time (HH:MM): %s\n", r.time);
+        printf("MIS Assistant (Borrow): %s\n", r.mis);
+        if (strcmp(r.status, "RETURNED") == 0) {
+            printf("Return Time (HH:MM): %s\n", r.returnTime);
+            printf("MIS Assistant (Return): %s\n", r.returnMis);
+        } else {
+            printf("Return Time (HH:MM): Not returned yet\n");
+            printf("MIS Assistant (Return): N/A\n");
+        }
+        recordNo++;
+        printf("=================================\n");
+    }
+
+    fclose(fp);
+}
+void search() {
+    system("cls");
+    records r;
+    FILE *fp;
+    char searchTerm[100];
+    int recordFound = 0;
+
+    printf("\nEnter name or date (MM-DD-YYYY) to search: ");
+    scanf(" %[^\n]s", searchTerm);
+
+    fp = fopen("laptopRecords.txt", "r");
+    if (fp == NULL) {
+        printf("Failed to open the records file.\n");
+        return;
+    }
+
+    printf("\n--- Search Results: ---\n");
+    while (fscanf(fp, "%[^\t]\t%[^\t]\t%[^\t]\t%[^\t]\t%[^\t]\t%d\n",
+                  r.name, r.date, r.time, r.mis, r.status, &r.lapNo) != EOF) {
+        if (strstr(r.name, searchTerm) != NULL || strstr(r.date, searchTerm) != NULL) {
+            recordFound = 1;
+            printf("\nRecord Found:\n");
+            printf("Name: %s\n", r.name);
+            printf("Date (MM-DD-YYYY): %s\n", r.date);
+            printf("Borrow Time (HH:MM): %s\n", r.time);
+            printf("MIS Assistant (Borrow): %s\n", r.mis);
+            if (strcmp(r.status, "RETURNED") == 0) {
+                printf("Return Time (HH:MM): %s\n", r.returnTime);
+                printf("MIS Assistant (Return): %s\n", r.returnMis);
+            } else {
+                printf("Return Time (HH:MM): Not returned yet\n");
+                printf("MIS Assistant (Return): N/A\n");
+            }
+            printf("------------------------------------\n");
+        }
+    }
+
+    if (!recordFound) {
+        printf("No records found for '%s'.\n", searchTerm);
+    }
+
+    fclose(fp);
+}
+
+int main () {
+    laptopAvail();
+    int choice;
+
+    do {
+        printMenu();
+       centerText("Enter your choice: ", totalWidth);
+        scanf("%d", &choice);
+
+        switch(choice) {
+            case 1:
+                borrow();
+                printf("\n\t\t\t\t\t\t\t          Press enter to return to the menu...");
+                getchar();
+                getchar();
+            break;
+            case 2:
+                returnLap();
+                printf("\n\t\t\t\t\t\t\t          Press enter to return to the menu...");
+                getchar();
+                getchar();
+            break;
+            case 3:
+                lapStat();
+                printf("\n\t\t\t\t\t\t\t          Press enter to return to the menu...");
+                getchar();
+                getchar();
+            break;
+            case 4:
+                displayRecord();
+                printf("\n\t\t\t\t\t\t\t          Press enter to return to the menu...");
+                getchar();
+                getchar();
+            break;
+            case 5:
+                search();
+                printf("\n\t\t\t\t\t\t\t          Press enter to return to the menu...");
+                getchar();
+                getchar();
+            break;
+            case 6:
+                centerText("Exiting program. Goodbye!", totalWidth);
+                break;
+            default:
+                printf("\n\t\t\t\t\t\t\t           Invalid Input. Try again.");
+                printf("\n\t\t\t\t\t\t\t      Press enter to return to the menu...");
+                getchar();
+                getchar();
+        }
+
+
+    } while (choice!=6);
+    return 0;
+}
